@@ -14,7 +14,7 @@ uv run triage "Where is my order A-1001?" c1   # CLI: [ticket text] [customer_id
 TRIAGE_MODEL=test uv run triage           # run offline with pydantic-ai's dummy model
 ```
 
-Live runs need `ANTHROPIC_API_KEY` (default model) or e.g. `TRIAGE_MODEL=openai:gpt-5` with `OPENAI_API_KEY`. No linter is configured.
+Live runs go through EPAM DIAL and need `DIAL_API_URL`, `DIAL_API_KEY`, `DIAL_DEPLOYMENT_NAME` (env or `.env`; see `.env.example`). The deployment must support tools: check `features.tools` via `curl -s "$DIAL_API_URL/openai/models" -H "Api-Key: $DIAL_API_KEY"`. No linter is configured.
 
 ## Architecture
 
@@ -25,7 +25,7 @@ A pydantic-ai tutorial project (src layout, package `support_triage`, entry poin
 3. A deterministic guardrail in code overrides the LLM: `urgency >= 4` forces `needs_human=True` with reason "High urgency".
 
 Key points spanning files:
-- Both agents are module-level singletons in `agents.py`, built with `defer_model_check=True` so importing works without API keys. The model string comes from `config.py` (`TRIAGE_MODEL` env, read at import time).
+- Both agents are module-level singletons in `agents.py`, built with `defer_model_check=True` so importing works without API keys. `config.py` builds the model at import time: DIAL is Azure-OpenAI-compatible, so it's an `OpenAIChatModel` over `AzureProvider`. If DIAL vars are missing it returns a placeholder that errors only when a run is attempted, so tests import fine without credentials. `TRIAGE_MODEL=test` selects the offline dummy model.
 - Tools (`lookup_order`, `search_faq`) get the fake in-memory `SupportDB` (`db.py`) through `RunContext[SupportDeps]`. `get_order` enforces customer scoping so one customer can't see another's orders; keep that invariant.
 - `models.py` holds the Pydantic contracts (`Triage`, `Reply`, `Ticket`, `Category`).
 

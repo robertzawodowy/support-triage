@@ -14,7 +14,9 @@ Ticket -> triage_agent -> Triage (Pydantic) -> support_agent (+tools, +deps) -> 
 
 ```bash
 uv sync
-export ANTHROPIC_API_KEY=...            # or OPENAI_API_KEY with TRIAGE_MODEL=openai:gpt-5
+cp .env.example .env                    # then fill in DIAL_API_URL, DIAL_API_KEY, DIAL_DEPLOYMENT_NAME
+# list deployments (pick one with features.tools == true):
+curl -s "$DIAL_API_URL/openai/models" -H "Api-Key: $DIAL_API_KEY"
 uv run triage "Where is my order A-1001?" c1
 uv run triage "You charged me twice, this is unacceptable!" c1
 TRIAGE_MODEL=test uv run triage         # offline, no key needed (dummy output)
